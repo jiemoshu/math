@@ -1,0 +1,177 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "API Gateway resource stack for myApi",
+  "Parameters": {
+    "env": {
+      "Type": "String"
+    },
+    "functionusersFunction": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "myApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Description": "REST API for user management",
+        "Name": {
+          "Fn::Join": [
+            "",
+            [
+              "myApi",
+              "-",
+              {
+                "Ref": "env"
+              }
+            ]
+          ]
+        },
+        "Body": {
+          "swagger": "2.0",
+          "info": {
+            "version": "1.0",
+            "title": "myApi"
+          },
+          "paths": {
+            "/users": {
+              "get": {
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Ref": "functionusersFunction"
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "responses": {}
+              },
+              "post": {
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Ref": "functionusersFunction"
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "responses": {}
+              }
+            },
+            "/users/{id}": {
+              "get": {
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Ref": "functionusersFunction"
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "responses": {}
+              },
+              "delete": {
+                "x-amazon-apigateway-integration": {
+                  "httpMethod": "POST",
+                  "type": "aws_proxy",
+                  "uri": {
+                    "Fn::Join": [
+                      "",
+                      [
+                        "arn:aws:apigateway:",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        ":lambda:path/2015-03-31/functions/",
+                        {
+                          "Ref": "functionusersFunction"
+                        },
+                        "/invocations"
+                      ]
+                    ]
+                  }
+                },
+                "responses": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "DeploymentAPIGW": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "myApi"
+        },
+        "StageName": {
+          "Ref": "env"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "RootUrl": {
+      "Description": "Root URL of the API gateway",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "myApi"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".amazonaws.com/",
+            {
+              "Ref": "env"
+            }
+          ]
+        ]
+      }
+    },
+    "ApiName": {
+      "Value": {
+        "Ref": "myApi"
+      }
+    }
+  }
+}
