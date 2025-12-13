@@ -16,6 +16,15 @@ interface User {
   name: string
   email: string
   createdAt: string
+  providerUserId?: string
+  avatar?: string
+}
+
+interface CurrentUser {
+  id: string
+  name: string
+  email: string
+  avatar?: string
 }
 
 export default function Home() {
@@ -23,6 +32,23 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  // 获取当前登录用户
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me')
+      if (response.ok) {
+        const data = await response.json()
+        setCurrentUser(data.user)
+      }
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
 
   // 获取所有用户
   const fetchUsers = async () => {
@@ -93,14 +119,117 @@ export default function Home() {
   }
 
   useEffect(() => {
+    fetchCurrentUser()
     fetchUsers()
   }, [])
 
   return (
     <main style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '30px', fontSize: '32px' }}>
-        Amplify + Lambda + DynamoDB 示例
-      </h1>
+      {/* 顶部导航栏 */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '30px',
+          paddingBottom: '20px',
+          borderBottom: '1px solid #eee',
+        }}
+      >
+        <h1 style={{ fontSize: '28px', margin: 0 }}>
+          Singapore Math 平台
+        </h1>
+
+        {/* 用户信息区域 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {authLoading ? (
+            <span style={{ color: '#666' }}>加载中...</span>
+          ) : currentUser ? (
+            <>
+              {/* 用户头像 */}
+              {currentUser.avatar ? (
+                <img
+                  src={currentUser.avatar}
+                  alt={currentUser.name}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                  }}
+                >
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+
+              {/* 用户名和邮箱 */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: '600', color: '#333' }}>
+                  {currentUser.name}
+                </div>
+                <div style={{ fontSize: '12px', color: '#666' }}>
+                  {currentUser.email}
+                </div>
+              </div>
+
+              {/* 登出按钮 */}
+              <a
+                href="/api/auth/logout"
+                style={{
+                  padding: '8px 16px',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.background = '#e5e7eb'
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.background = '#f3f4f6'
+                }}
+              >
+                退出登录
+              </a>
+            </>
+          ) : (
+            <a
+              href="/login"
+              style={{
+                padding: '8px 20px',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '14px',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              登录
+            </a>
+          )}
+        </div>
+      </div>
 
       {/* 创建用户表单 */}
       <div style={{
@@ -251,6 +380,14 @@ export default function Home() {
           <li><code>POST /users</code> - 创建新用户 (body: {`{name, email}`})</li>
           <li><code>GET /users/:id</code> - 获取单个用户</li>
           <li><code>DELETE /users/:id</code> - 删除用户</li>
+          <li><code>GET /users/by-provider/:providerUserId</code> - 通过 OAuth Provider ID 获取用户</li>
+        </ul>
+        <h3 style={{ marginTop: '20px', marginBottom: '15px', fontSize: '20px' }}>认证端点</h3>
+        <ul style={{ lineHeight: '2', paddingLeft: '20px' }}>
+          <li><code>GET /api/auth/login</code> - 跳转到 OAuth 登录</li>
+          <li><code>GET /api/auth/callback</code> - OAuth 回调处理</li>
+          <li><code>GET /api/auth/logout</code> - 登出</li>
+          <li><code>GET /api/auth/me</code> - 获取当前登录用户</li>
         </ul>
       </div>
     </main>
