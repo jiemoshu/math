@@ -1,9 +1,9 @@
 # Singapore Math Platform - Development Commands
 # Usage: make <target>
 
-.PHONY: help setup dev-service dev-web neo4j-up neo4j-down \
-        kg-status kg-process kg-query kg-api kg-lint \
-        web-dev web-build web-lint clean
+.PHONY: help setup neo4j-up neo4j-down \
+        kg-dev kg-status kg-process kg-query kg-api kg-lint kg-format \
+        web-dev web-install web-build web-lint clean
 
 # Default target
 help:
@@ -12,23 +12,24 @@ help:
 	@echo "============================================="
 	@echo ""
 	@echo "Setup:"
-	@echo "  make setup        - Setup all services (Neo4j + KG Pipeline + Web)"
-	@echo "  make dev-service  - Setup KG Pipeline (Python venv + dependencies)"
-	@echo "  make dev-web      - Setup Web (install dependencies + run dev server)"
+	@echo "  make setup        - Full setup (Neo4j + KG Pipeline)"
 	@echo ""
 	@echo "Infrastructure:"
 	@echo "  make neo4j-up     - Start Neo4j container"
 	@echo "  make neo4j-down   - Stop Neo4j container"
 	@echo ""
-	@echo "KG Pipeline:"
+	@echo "KG Pipeline (services/kg-pipeline):"
+	@echo "  make kg-dev       - Setup: create venv + install dependencies"
 	@echo "  make kg-status    - Check pipeline status"
 	@echo "  make kg-process   - Process PDFs in inbox"
-	@echo "  make kg-query Q=\"your question\"  - Query the knowledge graph"
-	@echo "  make kg-api       - Start FastAPI server"
+	@echo "  make kg-query Q=\"...\" - Query the knowledge graph"
+	@echo "  make kg-api       - Start FastAPI server (:18000)"
 	@echo "  make kg-lint      - Lint Python code"
+	@echo "  make kg-format    - Format Python code"
 	@echo ""
-	@echo "Web:"
-	@echo "  make web-dev      - Run Next.js dev server"
+	@echo "Web (web/):"
+	@echo "  make web-dev      - Install deps + run dev server (:3000)"
+	@echo "  make web-install  - Install dependencies only"
 	@echo "  make web-build    - Build for production"
 	@echo "  make web-lint     - Lint TypeScript code"
 	@echo ""
@@ -37,23 +38,12 @@ help:
 # SETUP
 # =============================================================================
 
-setup: neo4j-up dev-service
+setup: neo4j-up kg-dev
 	@echo ""
 	@echo "✅ Setup complete! Next steps:"
 	@echo "   1. Edit .env and add your OPENAI_API_KEY"
 	@echo "   2. make kg-status"
 	@echo ""
-
-dev-service:
-	@./scripts/setup-kg-pipeline.sh
-
-dev-web:
-	@echo "Setting up Web (Next.js)..."
-	@cd web && yarn install
-	@echo ""
-	@echo "✅ Dependencies installed! Starting dev server..."
-	@echo ""
-	@cd web && yarn dev
 
 # =============================================================================
 # INFRASTRUCTURE
@@ -70,11 +60,14 @@ neo4j-down:
 	@docker-compose down
 
 # =============================================================================
-# KG PIPELINE (requires: make dev-service first)
+# KG PIPELINE
 # =============================================================================
 
 VENV = .venv/bin
 KG_RUN = cd services/kg-pipeline && ../../$(VENV)/python -m
+
+kg-dev:
+	@./scripts/setup-kg-pipeline.sh
 
 kg-status:
 	@$(KG_RUN) src.cli status
@@ -105,7 +98,13 @@ kg-format:
 # WEB
 # =============================================================================
 
-web-dev:
+web-install:
+	@echo "Installing Web dependencies..."
+	@cd web && yarn install
+	@echo "✅ Dependencies installed"
+
+web-dev: web-install
+	@echo "Starting Next.js dev server..."
 	@cd web && yarn dev
 
 web-build:

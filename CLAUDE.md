@@ -20,8 +20,8 @@ make help          # Show all available commands
 ### Setup
 ```bash
 make setup         # Full setup: Neo4j + KG Pipeline
-make dev-service   # Setup KG Pipeline only (Python venv + deps)
-make dev-web       # Setup Web + run dev server (yarn install + dev)
+make kg-dev        # Setup KG Pipeline (Python venv + deps)
+make web-dev       # Setup Web + run dev server
 ```
 
 ### Infrastructure
