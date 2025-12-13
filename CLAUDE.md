@@ -11,73 +11,68 @@ Singapore Math platform with a Knowledge Graph Pipeline. Monorepo structure with
 
 ## Common Commands
 
-### Root (monorepo)
+All commands via `make`:
+
 ```bash
-docker-compose up -d     # Start Neo4j (port 17687)
-npm run dev              # Start web dev server
-npm run install:all      # Install all dependencies
+make help          # Show all available commands
 ```
 
-### Web (Next.js)
+### Setup
 ```bash
-npm run web:dev          # Start dev server (localhost:3000)
-npm run web:build        # Production build
-npm run web:lint         # Run ESLint
+make setup         # Full setup: Neo4j + KG Pipeline
+make dev-service   # Setup KG Pipeline only (Python venv + deps)
+make dev-web       # Setup Web + run dev server (yarn install + dev)
 ```
 
-### Knowledge Graph Pipeline (Python)
+### Infrastructure
 ```bash
-npm run kg:install       # poetry install
-npm run kg:ingest        # Process PDFs in data/inbox/
-npm run kg:status        # Check pipeline status
-npm run kg:query         # Query the knowledge graph
-npm run kg:api           # Start FastAPI server (localhost:18000)
-npm run kg:lint          # ruff check src/
-npm run kg:format        # black src/
+make neo4j-up      # Start Neo4j (ports 17474/17687)
+make neo4j-down    # Stop Neo4j
 ```
 
-### Direct Poetry Commands (in services/kg-pipeline/)
+### KG Pipeline
 ```bash
-poetry run process-inbox process          # Process inbox PDFs
-poetry run process-inbox process --dry-run # Preview without processing
-poetry run process-inbox status           # Show directory and config status
-poetry run process-inbox query "question" # Query the graph
-poetry run serve-api                      # Start FastAPI
-poetry run pytest                         # Run tests
-poetry run mypy src/                      # Type check
+make kg-status     # Check pipeline status
+make kg-process    # Process PDFs in inbox
+make kg-query Q="什么是 bar model?"  # Query knowledge graph
+make kg-api        # Start FastAPI server (:18000)
+make kg-lint       # Lint code
+make kg-format     # Format code
+```
+
+### Web
+```bash
+make web-dev       # Run Next.js dev server (:3000)
+make web-build     # Production build
+make web-lint      # Lint TypeScript
 ```
 
 ### Amplify (AWS)
 ```bash
-amplify push             # Deploy backend to AWS
-amplify status           # Check deployment status
+amplify push       # Deploy backend
+amplify status     # Check deployment
 ```
 
 ## Quick Start
 
-### 1. Configure Environment
 ```bash
-cp .env.example .env
-# Edit .env and set your OPENAI_API_KEY
-```
+# 1. Setup everything
+make setup                    # Creates venv, installs deps, starts Neo4j
 
-### 2. Start Dependencies
-```bash
-docker-compose up -d          # Start Neo4j
-```
+# 2. Configure API key
+vim .env                      # Set OPENAI_API_KEY=sk-...
 
-### 3. Install & Run KG Pipeline
-```bash
-cd services/kg-pipeline
-poetry install
-cp /path/to/math.pdf data/inbox/   # Add PDF files
-poetry run process-inbox process    # Process PDFs
-poetry run process-inbox query "什么是 bar model?"  # Query
+# 3. Process PDFs
+cp your-file.pdf services/kg-pipeline/data/inbox/
+make kg-process
+
+# 4. Query
+make kg-query Q="什么是 bar model?"
 ```
 
 ### Verify Services
 - Neo4j Browser: http://localhost:17474 (neo4j / singapore_math_2024)
-- KG API: http://localhost:18000/docs (after `poetry run serve-api`)
+- KG API: http://localhost:18000/docs (after `make kg-api`)
 
 ## Configuration
 
