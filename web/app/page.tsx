@@ -2,14 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { Amplify } from 'aws-amplify'
-import { generateClient } from 'aws-amplify/api'
+import { get, post, del } from 'aws-amplify/api'
 import config from '../amplifyconfiguration.json'
 
 // 配置 Amplify
 Amplify.configure(config)
-
-// 创建 API 客户端
-const client = generateClient()
 
 interface User {
   id: string
@@ -54,12 +51,13 @@ export default function Home() {
   const fetchUsers = async () => {
     setLoading(true)
     try {
-      const response = await client.get({
+      const { body } = await get({
         apiName: 'myApi',
         path: '/users',
-      })
+      }).response
 
-      setUsers(response.body as unknown as User[])
+      const data = await body.json()
+      setUsers(data as unknown as User[])
     } catch (error) {
       console.error('获取用户失败:', error)
       alert('获取用户失败')
@@ -74,7 +72,7 @@ export default function Home() {
     setLoading(true)
 
     try {
-      const response = await client.post({
+      const { body } = await post({
         apiName: 'myApi',
         path: '/users',
         options: {
@@ -83,9 +81,9 @@ export default function Home() {
             email,
           },
         },
-      })
+      }).response
 
-      console.log('创建成功:', response)
+      console.log('创建成功:', await body.json())
       alert('用户创建成功！')
       setName('')
       setEmail('')
@@ -103,10 +101,10 @@ export default function Home() {
     setLoading(true)
 
     try {
-      await client.del({
+      await del({
         apiName: 'myApi',
         path: `/users/${userId}`,
-      })
+      }).response
 
       alert('用户删除成功！')
       fetchUsers() // 刷新列表
