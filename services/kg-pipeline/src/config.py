@@ -10,11 +10,21 @@ from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def _get_env_files() -> tuple[str, ...]:
+    """Get env file paths: monorepo root first, then service directory."""
+    service_root = Path(__file__).parent.parent
+    monorepo_root = service_root.parent.parent
+    return (
+        str(monorepo_root / ".env"),  # /math/.env (primary)
+        str(service_root / ".env"),    # /math/services/kg-pipeline/.env (fallback)
+    )
+
+
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_get_env_files(),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
