@@ -7,7 +7,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 SERVICE_DIR="$PROJECT_ROOT/services/kg-pipeline"
-VENV_DIR="$SERVICE_DIR/.venv"
+VENV_DIR="$PROJECT_ROOT/.venv"  # Root level for easy access
 
 # Colors for output
 RED='\033[0;31m'
@@ -113,7 +113,7 @@ echo ""
 echo "Usage:"
 echo ""
 echo "  # Activate the virtual environment"
-echo -e "  ${YELLOW}source services/kg-pipeline/.venv/bin/activate${NC}"
+echo -e "  ${YELLOW}source .venv/bin/activate${NC}"
 echo ""
 echo "  # Or use make commands from project root:"
 echo -e "  ${YELLOW}make kg-status${NC}      # Check pipeline status"

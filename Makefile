@@ -73,8 +73,8 @@ neo4j-down:
 # KG PIPELINE (requires: make dev-service first)
 # =============================================================================
 
-KG_VENV = services/kg-pipeline/.venv/bin
-KG_RUN = cd services/kg-pipeline && $(KG_VENV)/python -m
+VENV = .venv/bin
+KG_RUN = cd services/kg-pipeline && ../../$(VENV)/python -m
 
 kg-status:
 	@$(KG_RUN) src.cli status
@@ -91,15 +91,15 @@ else
 endif
 
 kg-api:
-	@cd services/kg-pipeline && $(KG_VENV)/uvicorn src.api:app --host 0.0.0.0 --port 18000 --reload
+	@cd services/kg-pipeline && ../../$(VENV)/uvicorn src.api:app --host 0.0.0.0 --port 18000 --reload
 
 kg-lint:
-	@cd services/kg-pipeline && $(KG_VENV)/ruff check src/
-	@cd services/kg-pipeline && $(KG_VENV)/black --check src/
+	@cd services/kg-pipeline && ../../$(VENV)/ruff check src/
+	@cd services/kg-pipeline && ../../$(VENV)/black --check src/
 
 kg-format:
-	@cd services/kg-pipeline && $(KG_VENV)/black src/
-	@cd services/kg-pipeline && $(KG_VENV)/ruff check src/ --fix
+	@cd services/kg-pipeline && ../../$(VENV)/black src/
+	@cd services/kg-pipeline && ../../$(VENV)/ruff check src/ --fix
 
 # =============================================================================
 # WEB
@@ -120,7 +120,7 @@ web-lint:
 
 clean:
 	@echo "Cleaning..."
-	@rm -rf services/kg-pipeline/.venv
+	@rm -rf .venv
 	@rm -rf web/node_modules
 	@rm -rf web/.next
 	@docker-compose down -v 2>/dev/null || true
