@@ -1,12 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
-
 export const metadata: Metadata = {
-  title: 'Amplify + Lambda Template',
-  description: 'Next.js with AWS Amplify, Lambda, and DynamoDB',
+  title: 'Singapore Math',
+  description: '知识图谱学习平台',
 }
 
 export default function RootLayout({
@@ -16,7 +13,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN">
-      <body className={inter.className}>{children}</body>
+      <body style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif' }}>
+        {children}
+      </body>
     </html>
   )
 }
