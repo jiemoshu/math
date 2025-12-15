@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Amplify } from 'aws-amplify'
 import { get, post, del } from 'aws-amplify/api'
 import config from '../amplifyconfiguration.json'
+import CpaHero from '../components/hero/CpaHero'
 
 // 配置 Amplify
 Amplify.configure(config)
@@ -31,6 +32,7 @@ export default function Home() {
   const [email, setEmail] = useState('')
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [showAdmin, setShowAdmin] = useState(false)
 
   // 获取当前登录用户
   const fetchCurrentUser = async () => {
@@ -122,7 +124,41 @@ export default function Home() {
   }, [])
 
   return (
-    <main style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+    <main>
+      {/* CPA Math Hero Section */}
+      <CpaHero />
+
+      {/* Admin Section Toggle */}
+      <div style={{
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '24px 40px',
+        borderTop: '1px solid #e5e7eb'
+      }}>
+        <button
+          onClick={() => setShowAdmin(!showAdmin)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 24px',
+            background: showAdmin ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : '#f3f4f6',
+            color: showAdmin ? '#fff' : '#374151',
+            border: '1px solid #d1d5db',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          {showAdmin ? '隐藏管理面板' : '显示管理面板'}
+        </button>
+      </div>
+
+      {/* Admin Panel (Collapsible) */}
+      {showAdmin && (
+        <div style={{ padding: '0 40px 40px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* 顶部导航栏 */}
       <div
         style={{
@@ -388,6 +424,8 @@ export default function Home() {
           <li><code>GET /api/auth/me</code> - 获取当前登录用户</li>
         </ul>
       </div>
+        </div>
+      )}
     </main>
   )
 }
