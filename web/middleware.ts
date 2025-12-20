@@ -14,7 +14,7 @@ import { getIronSession } from 'iron-session'
 import { sessionOptions, SessionData } from '@/lib/session'
 
 // 公开路由（无需登录）
-const PUBLIC_ROUTES = ['/login', '/api/auth']
+const PUBLIC_ROUTES = ['/', '/api/auth']
 
 // 静态资源路径
 const STATIC_PATHS = ['/_next', '/favicon.ico', '/static']
@@ -35,17 +35,12 @@ export async function middleware(request: NextRequest) {
   const session = await getIronSession<SessionData>(request, response, sessionOptions)
   const isLoggedIn = !!session.user
 
-  // 未登录用户访问受保护页面 -> 重定向到登录页
+  // 未登录用户访问受保护页面 -> 直接跳转 OAuth 登录
   if (!isLoggedIn && !isPublicRoute) {
-    const loginUrl = new URL('/login', request.url)
+    const loginUrl = new URL('/api/auth/login', request.url)
     // 保存原始 URL，登录后可以跳回
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
-  }
-
-  // 已登录用户访问登录页 -> 重定向到首页
-  if (isLoggedIn && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return response
