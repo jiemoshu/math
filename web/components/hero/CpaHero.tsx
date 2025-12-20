@@ -17,7 +17,7 @@ interface MathExpression {
   result: number;
 }
 
-// Generate random expression within 0-10 range
+// Generate random expression with educational constraints
 function generateRandomExpression(): MathExpression {
   const operations: OperationType[] = ['add', 'subtract', 'multiply', 'divide'];
   const operation = operations[Math.floor(Math.random() * operations.length)];
@@ -38,15 +38,17 @@ function generateRandomExpression(): MathExpression {
       break;
 
     case 'multiply':
-      num1 = Math.floor(Math.random() * 5) + 1; // 1-5
-      num2 = Math.floor(Math.random() * 5) + 1; // 1-5
+      // Left operand must be single digit (1-9)
+      num1 = Math.floor(Math.random() * 9) + 1; // 1-9
+      num2 = Math.floor(Math.random() * 9) + 1; // 1-9
       result = num1 * num2;
       break;
 
     case 'divide':
-      num2 = Math.floor(Math.random() * 5) + 1; // 1-5 (divisor)
-      result = Math.floor(Math.random() * 5) + 1; // 1-5 (quotient)
-      num1 = num2 * result; // Ensure clean division
+      // Dividend (num1) max 2 digits (1-99)
+      num2 = Math.floor(Math.random() * 9) + 1; // 1-9 (divisor)
+      result = Math.floor(Math.random() * 9) + 1; // 1-9 (quotient)
+      num1 = num2 * result; // Ensure clean division, max 81
       break;
 
     default:
@@ -124,25 +126,25 @@ export default function CpaHero() {
     setCurrentExpression(newExpression);
     setAnimationPhase('idle');
 
-    // Phase 1: Show first number (after 500ms)
+    // Phase 1: Show first number (after 1500ms - 3x slower)
     autoPlayTimerRef.current = setTimeout(() => {
       setAnimationPhase('showing-first');
 
-      // Phase 2: Show operation and second number (after 1.2s)
+      // Phase 2: Show operation and second number (after 3.6s - 3x slower)
       phaseTimerRef.current = setTimeout(() => {
         setAnimationPhase('showing-second');
 
-        // Phase 3: Show result (after 1.2s)
+        // Phase 3: Show result (after 3.6s - 3x slower)
         phaseTimerRef.current = setTimeout(() => {
           setAnimationPhase('showing-result');
 
-          // Wait and start next sequence (after 2s)
+          // Wait and start next sequence (after 7s - original 2s + 5s extra gap)
           phaseTimerRef.current = setTimeout(() => {
             startAutoPlaySequence();
-          }, 2000);
-        }, 1200);
-      }, 1200);
-    }, 500);
+          }, 7000);
+        }, 3600);
+      }, 3600);
+    }, 1500);
   }, [isUserMode, clearAllTimers]);
 
   // Switch to user mode
@@ -194,7 +196,9 @@ export default function CpaHero() {
       setUserInput((prev) => {
         if (!prev.waitingForSecondNumber) {
           // Building first number
-          const newNum1 = prev.num1.length < 2 ? prev.num1 + num : prev.num1;
+          // For division: allow max 2 digits
+          const maxDigits = prev.operation === 'divide' ? 2 : 2;
+          const newNum1 = prev.num1.length < maxDigits ? prev.num1 + num : prev.num1;
           setDisplayExpression(newNum1);
           setCurrentExpression((exp) => ({
             ...exp,
@@ -204,7 +208,9 @@ export default function CpaHero() {
           return { ...prev, num1: newNum1 };
         } else {
           // Building second number
-          const newNum2 = prev.num2.length < 2 ? prev.num2 + num : prev.num2;
+          // For multiplication: left operand is num1, it should be single digit
+          const maxDigits = 2;
+          const newNum2 = prev.num2.length < maxDigits ? prev.num2 + num : prev.num2;
           const opSymbol = prev.operation ? operatorSymbols[prev.operation] : '';
           setDisplayExpression(`${prev.num1} ${opSymbol} ${newNum2}`);
           setCurrentExpression((exp) => ({
@@ -228,6 +234,18 @@ export default function CpaHero() {
       }
 
       if (userInput.num1) {
+        const num1Value = parseInt(userInput.num1);
+
+        // Validate constraints
+        if (op === 'multiply' && num1Value > 9) {
+          // Multiplication: left operand must be single digit
+          return;
+        }
+        if (op === 'divide' && num1Value > 99) {
+          // Division: dividend must be max 2 digits
+          return;
+        }
+
         const opSymbol = operatorSymbols[op];
         setDisplayExpression(`${userInput.num1} ${opSymbol}`);
         setUserInput((prev) => ({

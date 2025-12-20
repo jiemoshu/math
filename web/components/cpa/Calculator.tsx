@@ -151,7 +151,6 @@ export default function Calculator({
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '56px',
-    gridColumn: 'span 2',
   };
 
   const modeIndicatorStyle: React.CSSProperties = {
@@ -169,9 +168,6 @@ export default function Calculator({
     fontSize: '13px',
     fontWeight: 500,
   };
-
-  const numbers = [7, 8, 9, 4, 5, 6, 1, 2, 3, 0];
-  const operators: OperationType[] = ['add', 'subtract', 'multiply', 'divide'];
 
   return (
     <motion.div
@@ -201,96 +197,34 @@ export default function Calculator({
       </div>
 
       <div style={gridStyle}>
-        {/* Clear button */}
+        {/* Row 1: 7 8 9 ÷ */}
         <motion.button
-          style={clearButtonStyle}
+          style={numberButtonStyle}
           variants={buttonVariants}
           whileTap="tap"
           whileHover="hover"
-          onClick={onClear}
+          onClick={() => onNumberPress(7)}
         >
-          <Icon icon="mdi:backspace" width={24} />
+          7
         </motion.button>
-
-        {/* Operators in first row */}
-        {operators.slice(2).map((op) => (
-          <motion.button
-            key={op}
-            style={operatorButtonStyle(op)}
-            variants={buttonVariants}
-            whileTap="tap"
-            whileHover="hover"
-            onClick={() => onOperatorPress(op)}
-          >
-            <Icon icon={operatorIcons[op]} width={24} />
-          </motion.button>
-        ))}
-
-        {/* Numbers 7-9 */}
-        {numbers.slice(0, 3).map((num) => (
-          <motion.button
-            key={num}
-            style={numberButtonStyle}
-            variants={buttonVariants}
-            whileTap="tap"
-            whileHover="hover"
-            onClick={() => onNumberPress(num)}
-          >
-            {num}
-          </motion.button>
-        ))}
-
-        {/* Add operator */}
         <motion.button
-          style={operatorButtonStyle('add')}
+          style={numberButtonStyle}
           variants={buttonVariants}
           whileTap="tap"
           whileHover="hover"
-          onClick={() => onOperatorPress('add')}
+          onClick={() => onNumberPress(8)}
         >
-          <Icon icon={operatorIcons.add} width={24} />
+          8
         </motion.button>
-
-        {/* Numbers 4-6 */}
-        {numbers.slice(3, 6).map((num) => (
-          <motion.button
-            key={num}
-            style={numberButtonStyle}
-            variants={buttonVariants}
-            whileTap="tap"
-            whileHover="hover"
-            onClick={() => onNumberPress(num)}
-          >
-            {num}
-          </motion.button>
-        ))}
-
-        {/* Subtract operator */}
         <motion.button
-          style={operatorButtonStyle('subtract')}
+          style={numberButtonStyle}
           variants={buttonVariants}
           whileTap="tap"
           whileHover="hover"
-          onClick={() => onOperatorPress('subtract')}
+          onClick={() => onNumberPress(9)}
         >
-          <Icon icon={operatorIcons.subtract} width={24} />
+          9
         </motion.button>
-
-        {/* Numbers 1-3 */}
-        {numbers.slice(6, 9).map((num) => (
-          <motion.button
-            key={num}
-            style={numberButtonStyle}
-            variants={buttonVariants}
-            whileTap="tap"
-            whileHover="hover"
-            onClick={() => onNumberPress(num)}
-          >
-            {num}
-          </motion.button>
-        ))}
-
-        {/* Divide operator */}
         <motion.button
           style={operatorButtonStyle('divide')}
           variants={buttonVariants}
@@ -301,7 +235,92 @@ export default function Calculator({
           <Icon icon={operatorIcons.divide} width={24} />
         </motion.button>
 
-        {/* Number 0 */}
+        {/* Row 2: 4 5 6 × */}
+        <motion.button
+          style={numberButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onNumberPress(4)}
+        >
+          4
+        </motion.button>
+        <motion.button
+          style={numberButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onNumberPress(5)}
+        >
+          5
+        </motion.button>
+        <motion.button
+          style={numberButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onNumberPress(6)}
+        >
+          6
+        </motion.button>
+        <motion.button
+          style={operatorButtonStyle('multiply')}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onOperatorPress('multiply')}
+        >
+          <Icon icon={operatorIcons.multiply} width={24} />
+        </motion.button>
+
+        {/* Row 3: 1 2 3 - */}
+        <motion.button
+          style={numberButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onNumberPress(1)}
+        >
+          1
+        </motion.button>
+        <motion.button
+          style={numberButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onNumberPress(2)}
+        >
+          2
+        </motion.button>
+        <motion.button
+          style={numberButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onNumberPress(3)}
+        >
+          3
+        </motion.button>
+        <motion.button
+          style={operatorButtonStyle('subtract')}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onOperatorPress('subtract')}
+        >
+          <Icon icon={operatorIcons.subtract} width={24} />
+        </motion.button>
+
+        {/* Row 4: C 0 = + */}
+        <motion.button
+          style={clearButtonStyle}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={onClear}
+        >
+          <Icon icon="mdi:backspace" width={24} />
+        </motion.button>
         <motion.button
           style={numberButtonStyle}
           variants={buttonVariants}
@@ -311,8 +330,6 @@ export default function Calculator({
         >
           0
         </motion.button>
-
-        {/* Equals button - spans 2 columns */}
         <motion.button
           style={equalsButtonStyle}
           variants={buttonVariants}
@@ -321,6 +338,15 @@ export default function Calculator({
           onClick={onEquals}
         >
           <Icon icon="mdi:equal" width={28} />
+        </motion.button>
+        <motion.button
+          style={operatorButtonStyle('add')}
+          variants={buttonVariants}
+          whileTap="tap"
+          whileHover="hover"
+          onClick={() => onOperatorPress('add')}
+        >
+          <Icon icon={operatorIcons.add} width={24} />
         </motion.button>
       </div>
     </motion.div>

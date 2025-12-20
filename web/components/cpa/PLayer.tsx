@@ -81,17 +81,19 @@ function Bar({ value, maxValue, color, gradient, label, delay, isReducing, reduc
           overflow: 'hidden',
         }}
       >
-        {/* Bar */}
+        {/* Bar - always maintains original height */}
         <motion.div
           style={{
             width: '32px',
             borderRadius: '8px 8px 4px 4px',
-            background: gradient,
             boxShadow: `0 4px 12px ${color}40`,
             position: 'relative',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
           initial={{ height: 0 }}
-          animate={{ height: isReducing ? reducedHeight : height }}
+          animate={{ height: height }}
           transition={{
             type: 'spring',
             stiffness: 100,
@@ -99,56 +101,123 @@ function Bar({ value, maxValue, color, gradient, label, delay, isReducing, reduc
             delay: delay,
           }}
         >
-          {/* Shine effect */}
-          <div
-            style={{
-              position: 'absolute',
-              top: '4px',
-              left: '4px',
-              width: '8px',
-              height: '60%',
-              background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent)',
-              borderRadius: '4px',
-            }}
-          />
-        </motion.div>
+          {/* Top part - remaining (solid) */}
+          {isReducing && reduceAmount > 0 ? (
+            <>
+              <motion.div
+                style={{
+                  flex: 1,
+                  background: gradient,
+                  borderRadius: '8px 8px 0 0',
+                  position: 'relative',
+                }}
+                initial={{ height: 0 }}
+                animate={{ height: reducedHeight }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 100,
+                  damping: 15,
+                  delay: delay + 0.4,
+                }}
+              >
+                {/* Shine effect */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    left: '4px',
+                    width: '8px',
+                    height: '60%',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent)',
+                    borderRadius: '4px',
+                  }}
+                />
+              </motion.div>
 
-        {/* Reducing overlay */}
-        {isReducing && reduceAmount > 0 && (
-          <motion.div
-            style={{
-              position: 'absolute',
-              bottom: '8px',
-              width: '32px',
-              borderRadius: '8px',
-              background: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,0,0,0.1) 4px, rgba(255,0,0,0.1) 8px)',
-              border: '2px dashed #ef4444',
-            }}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{
-              height: (reduceAmount / maxValue) * 120,
-              opacity: 1,
-            }}
-            transition={{ delay: delay + 0.3 }}
-          />
-        )}
+              {/* Bottom part - removed (faded) */}
+              <motion.div
+                style={{
+                  flex: 1,
+                  background: 'repeating-linear-gradient(45deg, rgba(239,68,68,0.15), rgba(239,68,68,0.15) 4px, rgba(239,68,68,0.25) 4px, rgba(239,68,68,0.25) 8px)',
+                  borderRadius: '0 0 4px 4px',
+                  border: '2px dashed rgba(239,68,68,0.5)',
+                  borderTop: 'none',
+                }}
+                initial={{ height: 0, opacity: 0 }}
+                animate={{
+                  height: (reduceAmount / maxValue) * 120,
+                  opacity: 0.6,
+                }}
+                transition={{ delay: delay + 0.4 }}
+              />
+            </>
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                background: gradient,
+                borderRadius: '8px 8px 4px 4px',
+                position: 'relative',
+              }}
+            >
+              {/* Shine effect */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '4px',
+                  left: '4px',
+                  width: '8px',
+                  height: '60%',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.4), transparent)',
+                  borderRadius: '4px',
+                }}
+              />
+            </div>
+          )}
+        </motion.div>
 
         {/* Value label inside bar */}
         <motion.span
           style={{
             position: 'absolute',
-            bottom: height > 30 ? '50%' : height + 20,
+            bottom: isReducing && reduceAmount > 0
+              ? `calc(${(reduceAmount / maxValue) * 120}px + ${reducedHeight / 2}px)`
+              : height > 30 ? '50%' : height + 20,
+            transform: 'translateY(50%)',
             color: height > 30 ? '#fff' : color,
             fontWeight: 700,
             fontSize: '14px',
             textShadow: height > 30 ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
+            zIndex: 10,
           }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: delay + 0.2 }}
+          transition={{ delay: delay + 0.5 }}
         >
           {isReducing ? value - reduceAmount : value}
         </motion.span>
+
+        {/* Label for reduced amount (in faded area) */}
+        {isReducing && reduceAmount > 0 && (
+          <motion.span
+            style={{
+              position: 'absolute',
+              bottom: `calc(${((reduceAmount / maxValue) * 120) / 2}px)`,
+              transform: 'translateY(50%)',
+              color: '#ef4444',
+              fontWeight: 600,
+              fontSize: '12px',
+              textDecoration: 'line-through',
+              zIndex: 10,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.8 }}
+            transition={{ delay: delay + 0.6 }}
+          >
+            -{reduceAmount}
+          </motion.span>
+        )}
       </div>
 
       {/* Label */}

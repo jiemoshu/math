@@ -14,11 +14,34 @@ interface CLayerProps {
   onInteract?: () => void;
 }
 
-const operatorColors: Record<OperationType, { primary: string; secondary: string; glow: string }> = {
-  add: { primary: '#22c55e', secondary: '#86efac', glow: 'rgba(34, 197, 94, 0.3)' },
-  subtract: { primary: '#ef4444', secondary: '#fca5a5', glow: 'rgba(239, 68, 68, 0.3)' },
-  multiply: { primary: '#3b82f6', secondary: '#93c5fd', glow: 'rgba(59, 130, 246, 0.3)' },
-  divide: { primary: '#eab308', secondary: '#fde047', glow: 'rgba(234, 179, 8, 0.3)' },
+const operatorColors: Record<
+  OperationType,
+  { primary: string; secondary: string; glowPrimary: string; glowSecondary: string }
+> = {
+  add: {
+    primary: '#3b82f6',
+    secondary: '#f59e0b',
+    glowPrimary: 'rgba(59, 130, 246, 0.3)',
+    glowSecondary: 'rgba(245, 158, 11, 0.3)',
+  }, // Blue and Orange for clear distinction
+  subtract: {
+    primary: '#ef4444',
+    secondary: '#fca5a5',
+    glowPrimary: 'rgba(239, 68, 68, 0.3)',
+    glowSecondary: 'rgba(252, 165, 165, 0.3)',
+  },
+  multiply: {
+    primary: '#3b82f6',
+    secondary: '#93c5fd',
+    glowPrimary: 'rgba(59, 130, 246, 0.3)',
+    glowSecondary: 'rgba(147, 197, 253, 0.3)',
+  },
+  divide: {
+    primary: '#eab308',
+    secondary: '#fde047',
+    glowPrimary: 'rgba(234, 179, 8, 0.3)',
+    glowSecondary: 'rgba(253, 224, 71, 0.3)',
+  },
 };
 
 const operatorIcons: Record<OperationType, string> = {
@@ -34,10 +57,12 @@ interface DotProps {
   glow: string;
   delay: number;
   isRemoving?: boolean;
+  isFaded?: boolean;
   onClick?: () => void;
+  label?: string;
 }
 
-function Dot({ index, color, glow, delay, isRemoving, onClick }: DotProps) {
+function Dot({ index, color, glow, delay, isRemoving, isFaded, onClick, label }: DotProps) {
   return (
     <motion.div
       onClick={onClick}
@@ -51,11 +76,14 @@ function Dot({ index, color, glow, delay, isRemoving, onClick }: DotProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
       }}
       initial={{ scale: 0, opacity: 0, rotate: -180 }}
       animate={
         isRemoving
           ? { scale: 0, opacity: 0, rotate: 180, y: -20 }
+          : isFaded
+          ? { scale: 1, opacity: 0.3, rotate: 0, y: 0 }
           : { scale: 1, opacity: 1, rotate: 0, y: 0 }
       }
       exit={{ scale: 0, opacity: 0, rotate: 180 }}
@@ -79,6 +107,38 @@ function Dot({ index, color, glow, delay, isRemoving, onClick }: DotProps) {
           left: '-6px',
         }}
       />
+      {label && (
+        <motion.span
+          style={{
+            position: 'absolute',
+            fontSize: '10px',
+            fontWeight: 600,
+            color: '#fff',
+            textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: delay + 0.1 }}
+        >
+          {label}
+        </motion.span>
+      )}
+      {isFaded && (
+        <motion.div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '100%',
+            height: '2px',
+            background: '#ef4444',
+          }}
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ delay: delay + 0.2 }}
+        />
+      )}
     </motion.div>
   );
 }
@@ -178,6 +238,99 @@ export default function CLayer({
     background: 'rgba(0,0,0,0.02)',
   };
 
+  // Helper function to render dots in groups of 5
+  const renderDotsInGroups = (
+    count: number,
+    color: string,
+    glow: string,
+    baseDelay: number,
+    options?: { isFaded?: boolean; isRemoving?: boolean; showLabels?: boolean; labelColor?: string }
+  ) => {
+    const groups: JSX.Element[] = [];
+    const fullGroups = Math.floor(count / 5);
+    const remainder = count % 5;
+
+    // Render full groups of 5
+    for (let groupIdx = 0; groupIdx < fullGroups; groupIdx++) {
+      const groupDots = [];
+      for (let i = 0; i < 5; i++) {
+        const globalIdx = groupIdx * 5 + i;
+        groupDots.push(
+          <Dot
+            key={`dot-${globalIdx}`}
+            index={globalIdx}
+            color={color}
+            glow={glow}
+            delay={baseDelay + globalIdx * 0.08}
+            isFaded={options?.isFaded}
+            isRemoving={options?.isRemoving}
+            onClick={onInteract}
+            label={options?.showLabels ? `${globalIdx}` : undefined}
+          />
+        );
+      }
+      groups.push(
+        <motion.div
+          key={`group-${groupIdx}`}
+          style={{
+            display: 'flex',
+            gap: '6px',
+            padding: '8px',
+            borderRadius: '12px',
+            background: 'rgba(0,0,0,0.04)',
+            border: '2px solid rgba(0,0,0,0.08)',
+          }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: baseDelay + groupIdx * 0.4 }}
+        >
+          {groupDots}
+        </motion.div>
+      );
+    }
+
+    // Render remaining dots
+    if (remainder > 0) {
+      const remainderDots = [];
+      for (let i = 0; i < remainder; i++) {
+        const globalIdx = fullGroups * 5 + i;
+        remainderDots.push(
+          <Dot
+            key={`dot-${globalIdx}`}
+            index={globalIdx}
+            color={color}
+            glow={glow}
+            delay={baseDelay + globalIdx * 0.08}
+            isFaded={options?.isFaded}
+            isRemoving={options?.isRemoving}
+            onClick={onInteract}
+            label={options?.showLabels ? `${globalIdx}` : undefined}
+          />
+        );
+      }
+      groups.push(
+        <motion.div
+          key={`group-remainder`}
+          style={{
+            display: 'flex',
+            gap: '6px',
+            padding: '8px',
+            borderRadius: '12px',
+            background: 'rgba(0,0,0,0.04)',
+            border: '2px dashed rgba(0,0,0,0.08)',
+          }}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: baseDelay + fullGroups * 0.4 }}
+        >
+          {remainderDots}
+        </motion.div>
+      );
+    }
+
+    return groups;
+  };
+
   const operatorStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -188,60 +341,162 @@ export default function CLayer({
   const renderAddition = () => {
     const showFirst = animationPhase !== 'idle';
     const showSecond = animationPhase === 'showing-second' || animationPhase === 'showing-result';
+    const showResult = animationPhase === 'showing-result';
+
+    // Render colored set notation
+    const renderColoredSet = () => {
+      if (!showFirst) return null;
+
+      return (
+        <motion.div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 20px',
+            background: 'rgba(255,255,255,0.9)',
+            borderRadius: '12px',
+            border: '2px solid rgba(0,0,0,0.1)',
+            fontSize: '16px',
+            fontWeight: 600,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          {/* First set */}
+          <span style={{ color: '#333' }}>{'{'}</span>
+          {Array.from({ length: num1 }, (_, i) => (
+            <span key={`first-${i}`}>
+              <span style={{ color: colors.primary, fontWeight: 700 }}>{i}</span>
+              {i < num1 - 1 && <span style={{ color: '#666' }}>, </span>}
+            </span>
+          ))}
+          <span style={{ color: '#333' }}>{'}'}</span>
+
+          {/* Plus sign */}
+          {showSecond && <span style={{ color: colors.primary, fontSize: '20px' }}>+</span>}
+
+          {/* Second set */}
+          {showSecond && (
+            <>
+              <span style={{ color: '#333' }}>{'{'}</span>
+              {Array.from({ length: num2 }, (_, i) => (
+                <span key={`second-${i}`}>
+                  <span style={{ color: colors.secondary, fontWeight: 700 }}>{i}</span>
+                  {i < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#333' }}>{'}'}</span>
+            </>
+          )}
+
+          {/* Equals and result set */}
+          {showResult && result !== null && (
+            <>
+              <span style={{ color: '#333', fontSize: '20px' }}>=</span>
+              <span style={{ color: '#333' }}>{'{'}</span>
+              {/* First group elements in primary color */}
+              {Array.from({ length: num1 }, (_, i) => (
+                <span key={`result-first-${i}`}>
+                  <span style={{ color: colors.primary, fontWeight: 700 }}>{i}</span>
+                  <span style={{ color: '#666' }}>, </span>
+                </span>
+              ))}
+              {/* Second group elements in secondary color */}
+              {Array.from({ length: num2 }, (_, i) => (
+                <span key={`result-second-${i}`}>
+                  <span style={{ color: colors.secondary, fontWeight: 700 }}>{i}</span>
+                  {i < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#333' }}>{'}'}</span>
+            </>
+          )}
+        </motion.div>
+      );
+    };
 
     return (
-      <div style={contentStyle}>
-        {/* First group */}
-        <motion.div
-          style={groupStyle}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showFirst ? 1 : 0 }}
-        >
-          <AnimatePresence>
-            {showFirst &&
-              Array.from({ length: num1 }).map((_, i) => (
-                <Dot
-                  key={`first-${i}`}
-                  index={i}
-                  color={colors.primary}
-                  glow={colors.glow}
-                  delay={i * 0.08}
-                  onClick={onInteract}
-                />
-              ))}
-          </AnimatePresence>
-        </motion.div>
+      <div style={{ ...contentStyle, flexDirection: 'column', gap: '20px' }}>
+        {/* Visual dots representation */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+          {!showResult && (
+            <>
+              {/* First group */}
+              <motion.div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  alignItems: 'center',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: showFirst ? 1 : 0 }}
+              >
+                <AnimatePresence>
+                  {showFirst && renderDotsInGroups(num1, colors.primary, colors.glowPrimary, 0, { showLabels: true })}
+                </AnimatePresence>
+              </motion.div>
 
-        {/* Operator */}
-        <motion.div
-          style={operatorStyle}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: showFirst ? 1 : 0, scale: showFirst ? 1 : 0 }}
-          transition={{ delay: num1 * 0.08 }}
-        >
-          <Icon icon={operatorIcons.add} width={36} />
-        </motion.div>
+              {/* Operator */}
+              <motion.div
+                style={operatorStyle}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: showFirst ? 1 : 0, scale: showFirst ? 1 : 0 }}
+                transition={{ delay: num1 * 0.08 }}
+              >
+                <Icon icon={operatorIcons.add} width={36} />
+              </motion.div>
 
-        {/* Second group */}
-        <motion.div
-          style={groupStyle}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showSecond ? 1 : 0 }}
-        >
-          <AnimatePresence>
-            {showSecond &&
-              Array.from({ length: num2 }).map((_, i) => (
-                <Dot
-                  key={`second-${i}`}
-                  index={i}
-                  color={colors.secondary}
-                  glow={colors.glow}
-                  delay={i * 0.08}
-                  onClick={onInteract}
-                />
-              ))}
-          </AnimatePresence>
-        </motion.div>
+              {/* Second group */}
+              <motion.div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  alignItems: 'center',
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: showSecond ? 1 : 0 }}
+              >
+                <AnimatePresence>
+                  {showSecond && renderDotsInGroups(num2, colors.secondary, colors.glowSecondary, 0.2, { showLabels: true })}
+                </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+
+          {/* Result - combined groups maintaining colors */}
+          {showResult && result !== null && (
+            <motion.div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                alignItems: 'center',
+              }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+                <AnimatePresence>
+                  {renderDotsInGroups(num1, colors.primary, colors.glowPrimary, 0, { showLabels: true })}
+                  {renderDotsInGroups(num2, colors.secondary, colors.glowSecondary, num1 * 0.08, { showLabels: true })}
+                </AnimatePresence>
+              </div>
+              <span style={{ fontSize: '14px', color: '#333', fontWeight: 600 }}>
+                总共 = {result}
+              </span>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Colored set notation at bottom */}
+        {renderColoredSet()}
       </div>
     );
   };
@@ -252,62 +507,208 @@ export default function CLayer({
     const showResult = animationPhase === 'showing-result';
     const resultNum = Math.max(0, num1 - num2);
 
-    return (
-      <div style={contentStyle}>
-        {/* Initial group with removal animation */}
+    // Render colored set notation for subtraction
+    const renderSubtractionSet = () => {
+      if (!showFirst) return null;
+
+      return (
         <motion.div
-          style={groupStyle}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 20px',
+            background: 'rgba(255,255,255,0.9)',
+            borderRadius: '12px',
+            border: '2px solid rgba(0,0,0,0.1)',
+            fontSize: '16px',
+            fontWeight: 600,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          {/* Initial set */}
+          <span style={{ color: '#333' }}>{'{'}</span>
+          {Array.from({ length: num1 }, (_, i) => (
+            <span key={`initial-${i}`}>
+              <span style={{ color: colors.primary, fontWeight: 700 }}>{i}</span>
+              {i < num1 - 1 && <span style={{ color: '#666' }}>, </span>}
+            </span>
+          ))}
+          <span style={{ color: '#333' }}>{'}'}</span>
+
+          {/* Minus sign and second set */}
+          {showRemoving && (
+            <>
+              <span style={{ color: colors.primary, fontSize: '20px' }}>-</span>
+              <span style={{ color: '#333' }}>{'{'}</span>
+              {Array.from({ length: num2 }, (_, i) => (
+                <span key={`subtract-${i}`}>
+                  <span style={{ color: colors.secondary, fontWeight: 700 }}>{i}</span>
+                  {i < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#333' }}>{'}'}</span>
+            </>
+          )}
+
+          {/* Result set with strikethrough on removed elements */}
+          {showResult && (
+            <>
+              <span style={{ color: '#333', fontSize: '20px' }}>=</span>
+              <span style={{ color: '#333' }}>{'{'}</span>
+              {Array.from({ length: num1 }, (_, i) => (
+                <span key={`result-${i}`}>
+                  <span
+                    style={{
+                      color: i < num2 ? colors.secondary : colors.primary,
+                      fontWeight: 700,
+                      textDecoration: i < num2 ? 'line-through' : 'none',
+                      opacity: i < num2 ? 0.5 : 1,
+                    }}
+                  >
+                    {i}
+                  </span>
+                  {i < num1 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#333' }}>{'}'}</span>
+            </>
+          )}
+        </motion.div>
+      );
+    };
+
+    return (
+      <div style={{ ...contentStyle, flexDirection: 'column', gap: '20px' }}>
+        {/* Main group showing all items, with faded items being removed */}
+        <motion.div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            alignItems: 'center',
+          }}
           initial={{ opacity: 0 }}
           animate={{ opacity: showFirst ? 1 : 0 }}
         >
-          <AnimatePresence>
-            {showFirst &&
-              Array.from({ length: num1 }).map((_, i) => (
-                <Dot
-                  key={`item-${i}`}
-                  index={i}
-                  color={showRemoving && i >= resultNum ? colors.secondary : colors.primary}
-                  glow={colors.glow}
-                  delay={i * 0.08}
-                  isRemoving={showResult && i >= resultNum}
-                  onClick={onInteract}
-                />
-              ))}
-          </AnimatePresence>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+            <AnimatePresence>
+              {showFirst &&
+                (() => {
+                  const allDots: JSX.Element[] = [];
+                  const fullGroups = Math.floor(num1 / 5);
+                  const remainder = num1 % 5;
+
+                  for (let groupIdx = 0; groupIdx < fullGroups; groupIdx++) {
+                    const groupDots = [];
+                    for (let i = 0; i < 5; i++) {
+                      const globalIdx = groupIdx * 5 + i;
+                      const isFaded = showRemoving && globalIdx >= resultNum;
+                      groupDots.push(
+                        <Dot
+                          key={`dot-${globalIdx}`}
+                          index={globalIdx}
+                          color={colors.primary}
+                          glow={colors.glowPrimary}
+                          delay={globalIdx * 0.08}
+                          isFaded={isFaded}
+                          onClick={onInteract}
+                          label={`${globalIdx}`}
+                        />
+                      );
+                    }
+                    allDots.push(
+                      <motion.div
+                        key={`group-${groupIdx}`}
+                        style={{
+                          display: 'flex',
+                          gap: '6px',
+                          padding: '8px',
+                          borderRadius: '12px',
+                          background: 'rgba(0,0,0,0.04)',
+                          border: '2px solid rgba(0,0,0,0.08)',
+                        }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: groupIdx * 0.4 }}
+                      >
+                        {groupDots}
+                      </motion.div>
+                    );
+                  }
+
+                  if (remainder > 0) {
+                    const remainderDots = [];
+                    for (let i = 0; i < remainder; i++) {
+                      const globalIdx = fullGroups * 5 + i;
+                      const isFaded = showRemoving && globalIdx >= resultNum;
+                      remainderDots.push(
+                        <Dot
+                          key={`dot-${globalIdx}`}
+                          index={globalIdx}
+                          color={colors.primary}
+                          glow={colors.glowPrimary}
+                          delay={globalIdx * 0.08}
+                          isFaded={isFaded}
+                          onClick={onInteract}
+                          label={`${globalIdx}`}
+                        />
+                      );
+                    }
+                    allDots.push(
+                      <motion.div
+                        key={`group-remainder`}
+                        style={{
+                          display: 'flex',
+                          gap: '6px',
+                          padding: '8px',
+                          borderRadius: '12px',
+                          background: 'rgba(0,0,0,0.04)',
+                          border: '2px dashed rgba(0,0,0,0.08)',
+                        }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: fullGroups * 0.4 }}
+                      >
+                        {remainderDots}
+                      </motion.div>
+                    );
+                  }
+
+                  return allDots;
+                })()}
+            </AnimatePresence>
+          </div>
+          <span style={{ fontSize: '12px', color: colors.primary, fontWeight: 600 }}>
+            {'{'}
+            {Array.from({ length: num1 }, (_, i) => i).join(', ')}
+            {'}'}
+          </span>
+          {showRemoving && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              style={{
+                fontSize: '12px',
+                color: colors.secondary,
+                fontWeight: 600,
+                padding: '4px 12px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                borderRadius: '8px',
+              }}
+            >
+              减去 {num2} 个 (虚化部分)
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Minus indicator */}
-        <motion.div
-          style={operatorStyle}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: showRemoving ? 1 : 0, scale: showRemoving ? 1 : 0 }}
-        >
-          <Icon icon={operatorIcons.subtract} width={36} />
-        </motion.div>
-
-        {/* Items being removed */}
-        {showRemoving && !showResult && (
-          <motion.div
-            style={{
-              ...groupStyle,
-              background: 'rgba(239, 68, 68, 0.1)',
-              border: '2px dashed #ef4444',
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            {Array.from({ length: num2 }).map((_, i) => (
-              <Dot
-                key={`remove-${i}`}
-                index={i}
-                color={colors.secondary}
-                glow={colors.glow}
-                delay={i * 0.08}
-                onClick={onInteract}
-              />
-            ))}
-          </motion.div>
-        )}
+        {/* Colored set notation at bottom */}
+        {renderSubtractionSet()}
       </div>
     );
   };
@@ -317,75 +718,150 @@ export default function CLayer({
     const showSecond = animationPhase === 'showing-second' || animationPhase === 'showing-result';
     const showResult = animationPhase === 'showing-result';
 
-    return (
-      <div style={contentStyle}>
-        {/* Groups representation */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
-          <AnimatePresence>
-            {showFirst &&
-              Array.from({ length: Math.min(num1, 5) }).map((_, groupIndex) => (
-                <motion.div
-                  key={`group-${groupIndex}`}
-                  style={{
-                    display: 'flex',
-                    gap: '6px',
-                    padding: '8px 12px',
-                    borderRadius: '12px',
-                    background:
-                      showSecond || showResult
-                        ? `${colors.primary}15`
-                        : 'rgba(0,0,0,0.02)',
-                    border: `2px solid ${showSecond || showResult ? colors.primary : 'transparent'}`,
-                  }}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: groupIndex * 0.15 }}
-                >
-                  {Array.from({ length: Math.min(num2, 5) }).map((_, i) => (
-                    <Block
-                      key={`block-${groupIndex}-${i}`}
-                      index={i}
-                      color={colors.primary}
-                      glow={colors.glow}
-                      delay={groupIndex * 0.15 + i * 0.05}
-                      onClick={onInteract}
-                    />
-                  ))}
-                  {num2 > 5 && (
-                    <span style={{ color: colors.primary, fontWeight: 600, alignSelf: 'center' }}>
-                      +{num2 - 5}
-                    </span>
-                  )}
-                </motion.div>
-              ))}
-          </AnimatePresence>
-          {num1 > 5 && showFirst && (
-            <motion.span
-              style={{ color: colors.primary, fontWeight: 600, fontSize: '14px' }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              ... 共 {num1} 组
-            </motion.span>
-          )}
-        </div>
+    // Render colored set notation for multiplication
+    const renderMultiplicationSet = () => {
+      if (!showFirst) return null;
 
-        {/* Operator */}
+      return (
         <motion.div
           style={{
-            ...operatorStyle,
-            position: 'absolute',
-            left: '50%',
-            top: '10px',
-            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 20px',
+            background: 'rgba(255,255,255,0.9)',
+            borderRadius: '12px',
+            border: '2px solid rgba(0,0,0,0.1)',
+            fontSize: '16px',
+            fontWeight: 600,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
           }}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: showFirst ? 1 : 0, scale: showFirst ? 1 : 0 }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
         >
-          <span style={{ fontSize: '12px', color: '#666' }}>
-            {num1} × {num2}
-          </span>
+          {/* First set (blue) */}
+          <span style={{ color: '#666' }}>{'{'}</span>
+          {Array.from({ length: num1 }, (_, i) => (
+            <span key={`num1-${i}`}>
+              <span style={{ color: colors.primary, fontWeight: 700 }}>{i}</span>
+              {i < num1 - 1 && <span style={{ color: '#666' }}>, </span>}
+            </span>
+          ))}
+          <span style={{ color: '#666' }}>{'}'}</span>
+
+          {/* Multiplication sign */}
+          {showSecond && <span style={{ color: '#666', margin: '0 8px', fontSize: '20px' }}>×</span>}
+
+          {/* Second set (orange for num2) */}
+          {showSecond && (
+            <>
+              <span style={{ color: '#666' }}>{'{'}</span>
+              {Array.from({ length: num2 }, (_, i) => (
+                <span key={`num2-${i}`}>
+                  <span style={{ color: colors.secondary, fontWeight: 700 }}>{i}</span>
+                  {i < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#666' }}>{'}'}</span>
+            </>
+          )}
+
+          {/* Result: repeated sets */}
+          {showResult && result !== null && (
+            <>
+              <span style={{ color: '#666', margin: '0 8px', fontSize: '20px' }}>=</span>
+              <span style={{ color: '#666' }}>{'{'}</span>
+              {Array.from({ length: num2 }, (_, groupIdx) => (
+                <span key={`group-${groupIdx}`}>
+                  <span style={{ color: '#666' }}>{'{'}</span>
+                  {Array.from({ length: num1 }, (_, i) => (
+                    <span key={`result-${groupIdx}-${i}`}>
+                      <span style={{ color: colors.primary, fontWeight: 700 }}>{i}</span>
+                      {i < num1 - 1 && <span style={{ color: '#666' }}>, </span>}
+                    </span>
+                  ))}
+                  <span style={{ color: '#666' }}>{'}'}</span>
+                  {groupIdx < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#666' }}>{'}'}</span>
+            </>
+          )}
         </motion.div>
+      );
+    };
+
+    return (
+      <div style={{ ...contentStyle, flexDirection: 'column', gap: '20px' }}>
+        {/* Visual dots representation */}
+        <motion.div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            alignItems: 'center',
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showFirst ? 1 : 0 }}
+        >
+          {/* Show num1 groups, each with num2 items */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+            <AnimatePresence>
+              {showFirst &&
+                Array.from({ length: Math.min(num1, 6) }).map((_, groupIndex) => (
+                  <motion.div
+                    key={`mul-group-${groupIndex}`}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '6px',
+                      alignItems: 'center',
+                    }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: groupIndex * 0.15 }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: '6px',
+                        padding: '8px 12px',
+                        borderRadius: '12px',
+                        background: `${colors.primary}15`,
+                        border: `2px solid ${colors.primary}`,
+                      }}
+                    >
+                      {renderDotsInGroups(num2, colors.secondary, colors.glowSecondary, groupIndex * 0.15, {
+                        showLabels: false,
+                      })}
+                    </div>
+                    <span style={{ fontSize: '10px', color: colors.primary, fontWeight: 600 }}>
+                      第 {groupIndex + 1} 组
+                    </span>
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+            {num1 > 6 && showFirst && (
+              <motion.span
+                style={{ color: colors.primary, fontWeight: 600, fontSize: '12px' }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                ... 共 {num1} 组
+              </motion.span>
+            )}
+          </div>
+          {showFirst && (
+            <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>
+              {num1} 组 × 每组 {num2} 个 = {num1 * num2}
+            </span>
+          )}
+        </motion.div>
+
+        {/* Colored set notation at bottom */}
+        {renderMultiplicationSet()}
       </div>
     );
   };
@@ -394,85 +870,180 @@ export default function CLayer({
     const showFirst = animationPhase !== 'idle';
     const showSecond = animationPhase === 'showing-second' || animationPhase === 'showing-result';
     const showResult = animationPhase === 'showing-result';
-    const groups = num2 > 0 ? Math.floor(num1 / num2) : 0;
+    const quotient = num2 > 0 ? Math.floor(num1 / num2) : 0;
     const remainder = num2 > 0 ? num1 % num2 : num1;
 
+    // Render colored set notation for division
+    const renderDivisionSet = () => {
+      if (!showFirst) return null;
+
+      return (
+        <motion.div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 20px',
+            background: 'rgba(255,255,255,0.9)',
+            borderRadius: '12px',
+            border: '2px solid rgba(0,0,0,0.1)',
+            fontSize: '16px',
+            fontWeight: 600,
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+          }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          {/* Dividend set (blue) */}
+          <span style={{ color: '#666' }}>{'{'}</span>
+          {Array.from({ length: num1 }, (_, i) => (
+            <span key={`num1-${i}`}>
+              <span style={{ color: colors.primary, fontWeight: 700 }}>{i}</span>
+              {i < num1 - 1 && <span style={{ color: '#666' }}>, </span>}
+            </span>
+          ))}
+          <span style={{ color: '#666' }}>{'}'}</span>
+
+          {/* Division sign */}
+          {showSecond && <span style={{ color: '#666', margin: '0 8px', fontSize: '20px' }}>÷</span>}
+
+          {/* Divisor set (orange) */}
+          {showSecond && (
+            <>
+              <span style={{ color: '#666' }}>{'{'}</span>
+              {Array.from({ length: num2 }, (_, i) => (
+                <span key={`num2-${i}`}>
+                  <span style={{ color: colors.secondary, fontWeight: 700 }}>{i}</span>
+                  {i < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#666' }}>{'}'}</span>
+            </>
+          )}
+
+          {/* Result: grouped sets */}
+          {showResult && (
+            <>
+              <span style={{ color: '#666', margin: '0 8px', fontSize: '20px' }}>=</span>
+              <span style={{ color: '#666' }}>{'{'}</span>
+              {Array.from({ length: num2 }, (_, groupIdx) => (
+                <span key={`group-${groupIdx}`}>
+                  <span style={{ color: '#666' }}>{'{'}</span>
+                  {Array.from({ length: quotient }, (_, i) => {
+                    const globalIdx = groupIdx * quotient + i;
+                    return (
+                      <span key={`result-${groupIdx}-${i}`}>
+                        <span style={{ color: colors.primary, fontWeight: 700 }}>{globalIdx}</span>
+                        {i < quotient - 1 && <span style={{ color: '#666' }}>, </span>}
+                      </span>
+                    );
+                  })}
+                  <span style={{ color: '#666' }}>{'}'}</span>
+                  {groupIdx < num2 - 1 && <span style={{ color: '#666' }}>, </span>}
+                </span>
+              ))}
+              <span style={{ color: '#666' }}>{'}'}</span>
+            </>
+          )}
+        </motion.div>
+      );
+    };
+
     return (
-      <div style={contentStyle}>
-        {/* Total items */}
+      <div style={{ ...contentStyle, flexDirection: 'column', gap: '20px' }}>
+        {/* Visual dots representation */}
+        {/* Total items before division */}
         {!showSecond && (
           <motion.div
-            style={groupStyle}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              alignItems: 'center',
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: showFirst ? 1 : 0 }}
           >
-            <AnimatePresence>
-              {showFirst &&
-                Array.from({ length: Math.min(num1, 12) }).map((_, i) => (
-                  <Dot
-                    key={`total-${i}`}
-                    index={i}
-                    color={colors.primary}
-                    glow={colors.glow}
-                    delay={i * 0.06}
-                    onClick={onInteract}
-                  />
-                ))}
-            </AnimatePresence>
-            {num1 > 12 && (
-              <span style={{ color: colors.primary, fontWeight: 600 }}>+{num1 - 12}</span>
-            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' }}>
+              <AnimatePresence>
+                {showFirst && renderDotsInGroups(num1, colors.primary, colors.glowPrimary, 0, { showLabels: true })}
+              </AnimatePresence>
+            </div>
+            <span style={{ fontSize: '12px', color: colors.primary, fontWeight: 600 }}>
+              总共 {num1} 个,要分成 {num2} 组
+            </span>
           </motion.div>
         )}
 
-        {/* Division groups */}
+        {/* Division result - items distributed into groups */}
         {showSecond && (
-          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
-            {Array.from({ length: Math.min(groups, 4) }).map((_, groupIndex) => (
-              <motion.div
-                key={`div-group-${groupIndex}`}
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '6px',
-                  padding: '10px',
-                  borderRadius: '12px',
-                  background: `${colors.primary}15`,
-                  border: `2px solid ${colors.primary}`,
-                  maxWidth: '100px',
-                  justifyContent: 'center',
-                }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: groupIndex * 0.2 }}
-              >
-                {Array.from({ length: Math.min(num2, 6) }).map((_, i) => (
-                  <Dot
-                    key={`div-${groupIndex}-${i}`}
-                    index={i}
-                    color={colors.secondary}
-                    glow={colors.glow}
-                    delay={groupIndex * 0.2 + i * 0.05}
-                    onClick={onInteract}
-                  />
-                ))}
-              </motion.div>
-            ))}
-            {groups > 4 && (
-              <motion.span
-                style={{ color: colors.primary, fontWeight: 600, alignSelf: 'center' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                ... 共 {groups} 组
-              </motion.span>
-            )}
+          <motion.div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              alignItems: 'center',
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {Array.from({ length: Math.min(num2, 6) }).map((_, groupIndex) => (
+                <motion.div
+                  key={`div-group-${groupIndex}`}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    alignItems: 'center',
+                  }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: groupIndex * 0.15 }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      padding: '10px',
+                      borderRadius: '12px',
+                      background: `${colors.primary}15`,
+                      border: `2px solid ${colors.primary}`,
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {renderDotsInGroups(quotient, colors.secondary, colors.glowSecondary, groupIndex * 0.15, {
+                      showLabels: false,
+                    })}
+                  </div>
+                  <span style={{ fontSize: '10px', color: colors.primary, fontWeight: 600 }}>
+                    第 {groupIndex + 1} 组
+                  </span>
+                </motion.div>
+              ))}
+              {num2 > 6 && (
+                <motion.span
+                  style={{ color: colors.primary, fontWeight: 600, alignSelf: 'center' }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  ... 共 {num2} 组
+                </motion.span>
+              )}
+            </div>
+            <span style={{ fontSize: '12px', color: '#666', fontWeight: 600 }}>
+              每组 {quotient} 个
+            </span>
             {remainder > 0 && showResult && (
               <motion.div
                 style={{
                   display: 'flex',
-                  flexWrap: 'wrap',
+                  flexDirection: 'column',
                   gap: '6px',
+                  alignItems: 'center',
                   padding: '10px',
                   borderRadius: '12px',
                   background: 'rgba(156, 163, 175, 0.15)',
@@ -482,32 +1053,26 @@ export default function CLayer({
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
-                {Array.from({ length: remainder }).map((_, i) => (
-                  <Dot
-                    key={`remainder-${i}`}
-                    index={i}
-                    color="#9ca3af"
-                    glow="rgba(156, 163, 175, 0.3)"
-                    delay={0.5 + i * 0.05}
-                    onClick={onInteract}
-                  />
-                ))}
-                <span style={{ fontSize: '10px', color: '#666', width: '100%', textAlign: 'center' }}>
-                  余数
-                </span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {Array.from({ length: remainder }).map((_, i) => (
+                    <Dot
+                      key={`remainder-${i}`}
+                      index={i}
+                      color="#9ca3af"
+                      glow="rgba(156, 163, 175, 0.3)"
+                      delay={0.5 + i * 0.05}
+                      onClick={onInteract}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: '10px', color: '#666', fontWeight: 600 }}>余 {remainder} 个</span>
               </motion.div>
             )}
-          </div>
+          </motion.div>
         )}
 
-        {/* Operator */}
-        <motion.div
-          style={operatorStyle}
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: showFirst && !showSecond ? 1 : 0, scale: showFirst && !showSecond ? 1 : 0 }}
-        >
-          <Icon icon={operatorIcons.divide} width={36} />
-        </motion.div>
+        {/* Colored set notation at bottom */}
+        {renderDivisionSet()}
       </div>
     );
   };
