@@ -1,16 +1,31 @@
 export default function Footer() {
+  const commitHash = process.env.NEXT_PUBLIC_GIT_COMMIT_HASH || 'dev'
+
   return (
     <footer
       style={{
-        padding: '24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '16px 24px',
         background: '#f9fafb',
         borderTop: '1px solid #e5e7eb',
-        textAlign: 'center',
         color: '#6b7280',
-        fontSize: '14px',
+        fontSize: '13px',
       }}
     >
-      <p>&copy; {new Date().getFullYear()} Singapore Math. All rights reserved.</p>
+      <p style={{ margin: 0 }}>
+        &copy; {new Date().getFullYear()} Singapore Math
+      </p>
+      <span
+        style={{
+          fontFamily: 'monospace',
+          fontSize: '12px',
+          color: '#9ca3af',
+        }}
+      >
+        v.{commitHash}
+      </span>
     </footer>
   )
 }

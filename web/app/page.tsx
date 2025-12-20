@@ -1,4 +1,5 @@
 import Header from '@/components/Header'
+import Footer from '@/components/Footer'
 
 export default function Home() {
   return (
@@ -10,7 +11,7 @@ export default function Home() {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: 'calc(100vh - 65px)',
+          minHeight: 'calc(100vh - 120px)',
           padding: '40px 20px',
           background: '#f9fafb',
         }}
@@ -50,6 +51,7 @@ export default function Home() {
           </p>
         </div>
       </main>
+      <Footer />
     </>
   )
 }
