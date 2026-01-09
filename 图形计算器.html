@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级图形计算器</title>
+    <a href="./CASIO fx-CG50.html">2D图形</a>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .calculator {
+            background-color: #2c3e50;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .display {
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #input-area {
+            font-size: 1.2em;
+            border: none;
+            outline: none;
+            background: transparent;
+            width: 100%;
+            resize: none;
+            min-height: 40px;
+        }
+
+        #result-area {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-top: 10px;
+            text-align: right;
+        }
+
+        .content-area {
+            display: flex;
+            gap: 20px;
+        }
+
+        .keyboard {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .graph-area {
+            flex: 1;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #graph-canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .btn {
+            padding: 15px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn.function {
+            background-color: #9b59b6;
+        }
+
+        .btn.function:hover {
+            background-color: #8e44ad;
+        }
+
+        .btn.math {
+            background-color: #e67e22;
+        }
+
+        .btn.math:hover {
+            background-color: #d35400;
+        }
+
+        .btn.action {
+            background-color: #e74c3c;
+        }
+
+        .btn.action:hover {
+            background-color: #c0392b;
+        }
+
+        .btn.equal {
+            grid-column: span 2;
+            background-color: #2ecc71;
+        }
+
+        .btn.equal:hover {
+            background-color: #27ae60;
+        }
+
+        .btn.clear {
+            background-color: #f39c12;
+        }
+
+        .btn.clear:hover {
+            background-color: #d35400;
+        }
+
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background-color: #7f8c8d;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .tab-btn.active {
+            background-color: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 800px) {
+            .content-area {
+                flex-direction: column;
+            }
+            .keyboard {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <!-- 显示区域 -->
+        <div class="display">
+            <textarea id="input-area" placeholder="输入表达式，例如：sin(pi/2) + cos(0)"></textarea>
+            <div id="result-area">0</div>
+        </div>
+
+        <!-- 功能标签页 -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-tab="calculator-tab">计算器</button>
+            <button class="tab-btn" data-tab="graph-tab">2D图形</button>
+            <button class="tab-btn" data-tab="3dgraph-tab">3D图形</button>
+            <button class="tab-btn" data-tab="table-tab">表格</button>
+            <button class="tab-btn" data-tab="equation-tab">解方程</button>
+            <button class="tab-btn" data-tab="geometry-tab">几何</button>
+        </div>
+
+        <!-- 内容区域 -->
+        <div class="content-area">
+            <!-- 计算器键盘 -->
+            <div class="tab-content active" id="calculator-tab">
+                <div class="keyboard">
+                    <!-- 数字和基础运算 -->
+                    <button class="btn" onclick="appendToInput('7')">7</button>
+                    <button class="btn" onclick="appendToInput('8')">8</button>
+                    <button class="btn" onclick="appendToInput('9')">9</button>
+                    <button class="btn" onclick="appendToInput('/')">÷</button>
+                    <button class="btn math" onclick="appendToInput('mod')">mod</button>
+                    <button class="btn math" onclick="appendToInput('%')">%</button>
+                    
+                    <button class="btn" onclick="appendToInput('4')">4</button>
+                    <button class="btn" onclick="appendToInput('5')">5</button>
+                    <button class="btn" onclick="appendToInput('6')">6</button>
+                    <button class="btn" onclick="appendToInput('*')">×</button>
+                    <button class="btn math" onclick="appendToInput('‰')">‰</button>
+                    <button class="btn math" onclick="appendToInput('‱')">‱</button>
+                    
+                    <button class="btn" onclick="appendToInput('1')">1</button>
+                    <button class="btn" onclick="appendToInput('2')">2</button>
+                    <button class="btn" onclick="appendToInput('3')">3</button>
+                    <button class="btn" onclick="appendToInput('-')">-</button>
+                    <button class="btn math" onclick="appendToInput('gcd(')">gcd(</button>
+                    <button class="btn math" onclick="appendToInput('lcm(')">lcm(</button>
+                    
+                    <button class="btn" onclick="appendToInput('0')">0</button>
+                    <button class="btn" onclick="appendToInput('.')">.</button>
+                    <button class="btn" onclick="appendToInput('+')">+</button>
+                    <button class="btn" onclick="appendToInput('^')">^</button>
+                    <button class="btn math" onclick="appendToInput('^^')">^^</button>
+                    <button class="btn math" onclick="appendToInput('^^^')">^^^</button>
+                    
+                    <!-- 三角函数 -->
+                    <button class="btn function" onclick="appendToInput('sin(')">sin(</button>
+                    <button class="btn function" onclick="appendToInput('cos(')">cos(</button>
+                    <button class="btn function" onclick="appendToInput('tan(')">tan(</button>
+                    <button class="btn function" onclick="appendToInput('sec(')">sec(</button>
+                    <button class="btn function" onclick="appendToInput('cot(')">cot(</button>
+                    <button class="btn function" onclick="appendToInput('csc(')">csc(</button>
+                    
+                    <!-- 反三角函数 -->
+                    <button class="btn function" onclick="appendToInput('asin(')">asin(</button>
+                    <button class="btn function" onclick="appendToInput('acos(')">acos(</button>
+                    <button class="btn function" onclick="appendToInput('atan(')">atan(</button>
+                    <button class="btn function" onclick="appendToInput('asec(')">asec(</button>
+                    <button class="btn function" onclick="appendToInput('acot(')">acot(</button>
+                    <button class="btn function" onclick="appendToInput('acsc(')">acsc(</button>
+                    
+                    <!-- 双曲函数 -->
+                    <button class="btn function" onclick="appendToInput('sinh(')">sinh(</button>
+                    <button class="btn function" onclick="appendToInput('cosh(')">cosh(</button>
+                    <button class="btn function" onclick="appendToInput('tanh(')">tanh(</button>
+                    <button class="btn function" onclick="appendToInput('sech(')">sech(</button>
+                    <button class="btn function" onclick="appendToInput('coth(')">coth(</button>
+                    <button class="btn function" onclick="appendToInput('csch(')">csch(</button>
+                    
+                    <!-- 反双曲函数 -->
+                    <button class="btn function" onclick="appendToInput('asinh(')">asinh(</button>
+                    <button class="btn function" onclick="appendToInput('acosh(')">acosh(</button>
+                    <button class="btn function" onclick="appendToInput('atanh(')">atanh(</button>
+                    <button class="btn function" onclick="appendToInput('asech(')">asech(</button>
+                    <button class="btn function" onclick="appendToInput('acoth(')">acoth(</button>
+                    <button class="btn function" onclick="appendToInput('acsch(')">acsch(</button>
+                    
+                    <!-- 对数和指数 -->
+                    <button class="btn math" onclick="appendToInput('log(')">log(</button>
+                    <button class="btn math" onclick="appendToInput('ln(')">ln(</button>
+                    <button class="btn math" onclick="appendToInput('log_a(')">log_a(</button>
+                    <button class="btn math" onclick="appendToInput('2^x(')">2^x(</button>
+                    <button class="btn math" onclick="appendToInput('e^x(')">e^x(</button>
+                    <button class="btn math" onclick="appendToInput('10^x(')">10^x(</button>
+                    
+                    <!-- 常量和阶乘 -->
+                    <button class="btn math" onclick="appendToInput('pi')">π</button>
+                    <button class="btn math" onclick="appendToInput('e')">e</button>
+                    <button class="btn math" onclick="appendToInput('tau')">τ</button>
+                    <button class="btn math" onclick="appendToInput('i')">i</button>
+                    <button class="btn math" onclick="appendToInput('!')">!</button>
+                    <button class="btn math" onclick="appendToInput('pi^x(')">pi^x(</button>
+                    
+                    <!-- 逻辑运算 -->
+                    <button class="btn function" onclick="appendToInput('or')">or</button>
+                    <button class="btn function" onclick="appendToInput('xor')">xor</button>
+                    <button class="btn function" onclick="appendToInput('and')">and</button>
+                    <button class="btn function" onclick="appendToInput('not(')">not(</button>
+                    <button class="btn function" onclick="appendToInput('>')">></button>
+                    <button class="btn function" onclick="appendToInput('<')"><</button>
+                    
+                    <!-- 比较运算 -->
+                    <button class="btn function" onclick="appendToInput('>=')">≥</button>
+                    <button class="btn function" onclick="appendToInput('<=')">≤</button>
+                    <button class="btn function" onclick="appendToInput('==')">==</button>
+                    <button class="btn function" onclick="appendToInput('!=')">≠</button>
+                    <button class="btn math" onclick="appendToInput('nCr(')">nCr(</button>
+                    <button class="btn math" onclick="appendToInput('nPr(')">nPr(</button>
+                    
+                    <!-- 字母 -->
+                    <button class="btn" onclick="appendToInput('A')">A</button>
+                    <button class="btn" onclick="appendToInput('B')">B</button>
+                    <button class="btn" onclick="appendToInput('C')">C</button>
+                    <button class="btn" onclick="appendToInput('a')">a</button>
+                    <button class="btn" onclick="appendToInput('b')">b</button>
+                    <button class="btn" onclick="appendToInput('c')">c</button>
+                    
+                    <!-- 控制按钮 -->
+                    <button class="btn clear" onclick="clearInput()">C</button>
+                    <button class="btn" onclick="appendToInput('(')">(</button>
+                    <button class="btn" onclick="appendToInput(')')">)</button>
+                    <button class="btn" onclick="appendToInput(',')">,</button>
+                    <button class="btn" onclick="appendToInput('sto(')">sto(</button>
+                    <button class="btn action" onclick="deleteLastChar()">←</button>
+                    
+                    <button class="btn equal" onclick="calculate()">=</button>
+                    <button class="btn action" onclick="drawGraph()">绘制图形</button>
+                </div>
+            </div>
+
+            <!-- 2D图形区域 -->
+            <div class="tab-content" id="graph-tab">
+                <div class="graph-area">
+                    <canvas id="graph-canvas"></canvas>
+                </div>
+            </div>
+
+            <!-- 3D图形区域 -->
+            <div class="tab-content" id="3dgraph-tab">
+                <div class="graph-area">
+                    <div id="3d-container" style="width:100%;height:100%;">3D图形功能开发中，可集成Three.js实现</div>
+                </div>
+            </div>
+
+            <!-- 表格区域 -->
+            <div class="tab-content" id="table-tab">
+                <div style="background:white;padding:20px;height:400px;overflow:auto;">
+                    <h3>函数表格</h3>
+                    <div id="table-container"></div>
+                </div>
+            </div>
+
+            <!-- 解方程区域 -->
+            <div class="tab-content" id="equation-tab">
+                <div style="background:white;padding:20px;height:400px;">
+                    <h3>解方程</h3>
+                    <input type="text" id="equation-input" placeholder="输入方程，例如：x^2 - 4 = 0" style="width:100%;padding:10px;margin:10px 0;">
+                    <button onclick="solveEquation()" class="btn">求解</button>
+                    <div id="equation-result" style="margin-top:20px;font-size:1.2em;"></div>
+                </div>
+            </div>
+
+            <!-- 几何功能区域 -->
+            <div class="tab-content" id="geometry-tab">
+                <div style="background:white;padding:20px;height:400px;">
+                    <h3>几何计算</h3>
+                    <div id="geometry-container">
+                        <!-- 几何计算功能可在此扩展 -->
+                        几何计算功能开发中（面积、体积、角度计算等）
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let canvas, ctx;
+        let inputArea = document.getElementById('input-area');
+        let resultArea = document.getElementById('result-area');
+        
+        // 数学常量定义 (使用高精度)
+        const CONSTANTS = {
+            pi: Math.PI,
+            e: Math.E,
+            tau: 2 * Math.PI,
+            i: { re: 0, im: 1 }, // 虚数单位
+        };
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化画布
+            canvas = document.getElementById('graph-canvas');
+            ctx = canvas.getContext('2d');
+            
+            // 设置画布尺寸
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            
+            // 标签页切换
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有激活状态
+                    tabButtons.forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // 激活当前标签
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // 键盘事件监听
+            inputArea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    calculate();
+                }
+            });
+            
+            // 绘制初始坐标系
+            drawCoordinateSystem();
+        });
+
+        // 调整画布尺寸
+        function resizeCanvas() {
+            if (canvas) {
+                const container = canvas.parentElement;
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                drawCoordinateSystem();
+            }
+        }
+
+        // 向输入框追加内容
+        function appendToInput(text) {
+            inputArea.value += text;
+            inputArea.focus();
+        }
+
+        // 清空输入框
+        function clearInput() {
+            inputArea.value = '';
+            resultArea.textContent = '0';
+            inputArea.focus();
+        }
+
+        // 删除最后一个字符
+        function deleteLastChar() {
+            inputArea.value = inputArea.value.slice(0, -1);
+            inputArea.focus();
+        }
+
+        // 高精度计算核心函数
+        function calculate() {
+            try {
+                let expression = inputArea.value.trim();
+                if (!expression) return;
+                
+                // 替换自定义运算符和常量
+                expression = preprocessExpression(expression);
+                
+                // 使用Function构造器执行计算 (注意：生产环境需做更严格的安全校验)
+                // 封装高精度计算环境
+                const compute = new Function(
+                    'Math', 'CONSTANTS',
+                    `
+                    // 定义扩展数学函数
+                    function factorial(n) {
+                        if (n < 0) return NaN;
+                        if (n === 0 || n === 1) return 1;
+                        let result = 1;
+                        for (let i = 2; i <= n; i++) {
+                            result *= i;
+                        }
+                        return result;
+                    }
+                    
+                    // 组合数 nCr = n!/(r!(n-r)!)
+                    function nCr(n, r) {
+                        return factorial(n) / (factorial(r) * factorial(n - r));
+                    }
+                    
+                    // 排列数 nPr = n!/(n-r)!
+                    function nPr(n, r) {
+                        return factorial(n) / factorial(n - r);
+                    }
+                    
+                    // 最大公约数
+                    function gcd(a, b) {
+                        a = Math.abs(a);
+                        b = Math.abs(b);
+                        while (b) {
+                            [a, b] = [b, a % b];
+                        }
+                        return a;
+                    }
+                    
+                    // 最小公倍数
+                    function lcm(a, b) {
+                        return (a * b) / gcd(a, b);
+                    }
+                    
+                    // 三角函数扩展 (sec, csc, cot)
+                    function sec(x) { return 1 / Math.cos(x); }
+                    function csc(x) { return 1 / Math.sin(x); }
+                    function cot(x) { return 1 / Math.tan(x); }
+                    
+                    // 反三角函数扩展
+                    function asec(x) { return Math.acos(1/x); }
+                    function acsc(x) { return Math.asin(1/x); }
+                    function acot(x) { return Math.PI/2 - Math.atan(x); }
+                    
+                    // 双曲函数扩展
+                    function sech(x) { return 1 / Math.cosh(x); }
+                    function csch(x) { return 1 / Math.sinh(x); }
+                    function coth(x) { return 1 / Math.tanh(x); }
+                    
+                    // 反双曲函数扩展
+                    function asech(x) { return Math.log(1/x + Math.sqrt(1/x/x - 1)); }
+                    function acsch(x) { return Math.log(1/x + Math.sqrt(1/x/x + 1)); }
+                    function acoth(x) { return 0.5 * Math.log((x+1)/(x-1)); }
+                    
+                    // 幂运算扩展
+                    function hyperPower(base, ...exponents) {
+                        let result = base;
+                        for (let exp of exponents) {
+                            result = Math.pow(result, exp);
+                        }
+                        return result;
+                    }
+                    
+                    // 逻辑运算
+                    function or(a, b) { return a || b; }
+                    function xor(a, b) { return (a || b) && !(a && b); }
+                    function and(a, b) { return a && b; }
+                    function not(a) { return !a; }
+                    
+                    // 百分比、千分比、万分比
+                    function percent(x) { return x / 100; }
+                    function permille(x) { return x / 1000; }
+                    function permyriad(x) { return x / 10000; }
+                    
+                    // 执行表达式计算
+                    return (() => {
+                        with(Math) {
+                            return ${expression};
+                        }
+                    })();
+                    `
+                );
+                
+                // 执行计算，使用long double精度（JS中Number是64位双精度，接近long double）
+                const result = compute(Math, CONSTANTS);
+                
+                // 显示结果
+                resultArea.textContent = isFinite(result) ? result : '计算错误';
+                
+            } catch (error) {
+                resultArea.textContent = '表达式错误: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        // 预处理表达式
+        function preprocessExpression(expr) {
+            // 替换常量
+            expr = expr.replace(/\bpi\b/g, 'CONSTANTS.pi');
+            expr = expr.replace(/\be\b/g, 'CONSTANTS.e');
+            expr = expr.replace(/\btau\b/g, 'CONSTANTS.tau');
+            expr = expr.replace(/\bi\b/g, 'CONSTANTS.i');
+            
+            // 替换百分比符号
+            expr = expr.replace(/%/g, '/100');
+            expr = expr.replace(/‰/g, '/1000');
+            expr = expr.replace(/‱/g, '/10000');
+            
+            // 替换幂运算
+            expr = expr.replace(/\^\^\^\^/g, ').hyperPower('); // 超级重叠幂
+            expr = expr.replace(/\^\^\^/g, ').hyperPower(');  // 重叠幂
+            expr = expr.replace(/\^\^/g, ').hyperPower(');    // 重幂
+            expr = expr.replace(/mod/g, '%'); // 取余
+            
+            // 替换阶乘
+            expr = expr.replace(/(\d+)(!)/g, 'factorial($1)');
+            
+            // 替换2^x, e^x, 10^x
+            expr = expr.replace(/2\^x\(/g, 'pow(2,');
+            expr = expr.replace(/e\^x\(/g, 'exp(');
+            expr = expr.replace(/10\^x\(/g, 'pow(10,');
+            expr = expr.replace(/pi\^x\(/g, 'pow(CONSTANTS.pi,');
+            
+            // 替换log_a
+            expr = expr.replace(/log_a\(/g, 'log('); // log_a(b) = ln(b)/ln(a) 需要进一步处理
+            
+            return expr;
+        }
+
+        // 绘制坐标系
+        function drawCoordinateSystem() {
+            if (!ctx) return;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const scale = 50; // 每个单位的像素数
+            
+            // 清空画布
+            ctx.clearRect(0, 0, width, height);
+            
+            // 设置样式
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 1;
+            
+            // 绘制网格
+            // 垂直线
+            for (let x = 0; x < width; x += scale) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // 水平线
+            for (let y = 0; y < height; y += scale) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+            
+            // 绘制坐标轴
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            // X轴
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+            ctx.lineTo(width, centerY);
+            ctx.stroke();
+            
+            // Y轴
+            ctx.beginPath();
+            ctx.moveTo(centerX, 0);
+            ctx.lineTo(centerX, height);
+            ctx.stroke();
+            
+            // 绘制刻度标签
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Consolas';
+            
+            // X轴刻度
+            for (let x = -Math.floor(centerX/scale); x <= Math.floor((width-centerX)/scale); x++) {
+                if (x === 0) continue;
+                const xPos = centerX + x * scale;
+                ctx.fillText(x, xPos - 4, centerY + 15);
+            }
+            
+            // Y轴刻度
+            for (let y = -Math.floor(centerY/scale); y <= Math.floor((height-centerY)/scale); y++) {
+                if (y === 0) continue;
+                const yPos = centerY - y * scale;
+                ctx.fillText(y, centerX + 5, yPos + 4);
+            }
+            
+            // 原点
+            ctx.fillText('0', centerX - 10, centerY + 15);
+        }
+
+        // 绘制函数图形
+        function drawGraph() {
+            try {
+                const expression = inputArea.value.trim();
+                if (!expression) return;
+                
+                // 重新绘制坐标系
+                drawCoordinateSystem();
+                
+                const width = canvas.width;
+                const height = canvas.height;
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const scale = 50;
+                const step = 2; // 采样步长
+                
+                // 设置函数曲线样式
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                
+                // 生成函数点
+                let firstPoint = true;
+                for (let screenX = 0; screenX < width; screenX += step) {
+                    // 转换为数学坐标
+                    const x = (screenX - centerX) / scale;
+                    
+                    // 计算y值
+                    const expr = expression.replace(/x/g, x);
+                    const processedExpr = preprocessExpression(expr);
+                    
+                    const compute = new Function('Math', 'CONSTANTS', `
+                        with(Math) {
+                            return ${processedExpr};
+                        }
+                    `);
+                    
+                    let y = compute(Math, CONSTANTS);
+                    
+                    // 转换为屏幕坐标
+                    const screenY = centerY - y * scale;
+                    
+                    // 绘制路径
+                    if (isFinite(y) && screenY >= 0 && screenY <= height) {
+                        if (firstPoint) {
+                            ctx.moveTo(screenX, screenY);
+                            firstPoint = false;
+                        } else {
+                            ctx.lineTo(screenX, screenY);
+                        }
+                    } else {
+                        firstPoint = true;
+                    }
+                }
+                
+                // 绘制曲线
+                ctx.stroke();
+                
+            } catch (error) {
+                resultArea.textContent = '绘图错误: ' + error.message;
+                console.error(error);
+            }
+        }
+
+        // 解方程（简单数值解法）
+        function solveEquation() {
+            const equationInput = document.getElementById('equation-input');
+            const equationResult = document.getElementById('equation-result');
+            const equation = equationInput.value.trim();
+            
+            if (!equation) {
+                equationResult.textContent = '请输入方程';
+                return;
+            }
+            
+            try {
+                // 简单牛顿迭代法求解
+                function f(x) {
+                    const expr = equation.replace(/=/g, '-(').replace(/x/g, x) + ')';
+                    const processedExpr = preprocessExpression(expr);
+                    const compute = new Function('Math', 'CONSTANTS', `
+                        with(Math) {
+                            return ${processedExpr};
+                        }
+                    `);
+                    return compute(Math, CONSTANTS);
+                }
+                
+                // 数值微分计算导数
+                function df(x, h = 1e-6) {
+                    return (f(x + h) - f(x - h)) / (2 * h);
+                }
+                
+                // 牛顿迭代
+                let x = 1; // 初始值
+                let maxIterations = 100;
+                let tolerance = 1e-8;
+                
+                for (let i = 0; i < maxIterations; i++) {
+                    const fx = f(x);
+                    if (Math.abs(fx) < tolerance) {
+                        equationResult.textContent = `解: x = ${x.toFixed(6)}`;
+                        return;
+                    }
+                    
+                    const dfx = df(x);
+                    if (Math.abs(dfx) < tolerance) break;
+                    
+                    x = x - fx / dfx;
+                }
+                
+                equationResult.textContent = '未找到解，或方程无实数解';
+                
+            } catch (error) {
+                equationResult.textContent = '解方程错误: ' + error.message;
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>
